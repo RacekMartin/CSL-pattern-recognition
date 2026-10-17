@@ -24,6 +24,5 @@ TestResults.xml
 
 requirements.txt
 .venv/
-.idea/
-.models/
-videos/
+models/
+data/
