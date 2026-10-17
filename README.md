@@ -16,11 +16,15 @@ People / organisations  I tried contacting
 - trojzmer
 - Sweet potatoes on the way
 - Markét Lundáková
-
-People / organisations  I will try reaching out to
 - doc. Ing. Jiří Krejsa, Ph.D
-- Marek Hruz (about another existing video dataset I found out about that he worked on)
-- Ilia Rajdova (also from Teiresias center just like Jan Fikejs in case that he won't responde)
+- divadlo Barka
+
+People to try making connection with:
+- Snajder
+- Krejsa's connections
+- Alfons
+- Terezia Vasilovčík Šustová
+- Tichá Linka
 
 Here are some usefeull links I came across so far whilst finalising my scripts:
 https://ai.google.dev/edge/api/mediapipe/python/mp/tasks/vision
@@ -39,6 +43,58 @@ Comunity:
 https://groups.google.com/g/mediapipe
 https://stackoverflow.com/questions/tagged/mediapipe
 
+Literature:
+https://ubn.ff.cuni.cz/ustav/lide/zamestnanci/mgr-andrea-hudakova-ph-d/
+
 Tutorials I got my inspiration from:
 https://www.youtube.com/watch?v=doDUihpj6ro&t=152s
 https://www.youtube.com/watch?v=wa2ARoUUdU8
+
+Proof of exissting fingerspelling applicatsaion:
+https://www.webbyawards.com/crafted-with-code/fingerspelling-with-machine-learning/
+
+Google's Kaggle project with most refined dataset on ASL:
+https://www.kaggle.com/competitions/asl-fingerspelling
+https://www.kaggle.com/competitions/asl-fingerspelling/writeups/darragh-dieter-1st-place-solution-improved-squeeze
+
+MUNI's dictio web app:
+https://www.dictio.info/cs/translate/czj/text/q?slovni_druh=finger
+
+CNN course by 3blue1brown:
+https://www.3blue1brown.com/?topic=neural-networks&lesson=neural-networks
+
+Interesting websites
+https://www.pomuckyproneslysici.cz/online-kurz-znakoveho-jazyka-1-lekce-prstova-abeceda-na-dve-ruce-a/
+
+Theatre Barka:
+https://divadlobarka.cz
+
+Ticha linka:
+https://www.tichalinka.cz/kontakt
+
+The data will be stored as .npz format instead of plain .txt. or common .npy. 
+.npz is a ZIP archive which contains multiple NumPt arrays with different names.
+These will contain data like: timestamp_ms, landmarks coords, handedness_score,
+width, height, fps.
+
+For each participant I will create a CSV record to store necessary metadata such as
+gender, age, whether this person is hearing impaired/expert/beginner, handedness,
+answers on my questionaire.
+
+For each video I will create a CSV record to store information such as participnat_ID,
+resolution, handedness, whether the video is mirrored, resolution, fps etc.
+
+I'm not totally sure how this works, but based on NaN landmark coordinates I can
+segment the video to individual character signings.
+
+*** Poznamky z korespendencie s ludmi:
+
+
+*** Porovnania, ktore zahrnut do prace:
+- normalizacia podla vzdialenosti oci vs ramien
+- model natrenovany s landmarkmi tvare vs bez
+- dosiahnuta presnost obojrucnej abecedy vs jednorucnej u Snajdera
+- Transformer vs LSTM
+- predtrenovanie na amateroch + finetuning na profikoch vs bez predtrenovania
+- predtrenovanie na ASL vs finetuning na profikoch vs bez predtrenovania
+- zistenie ci auumentovane data priniesli presnost alebo ju praveze znizili
