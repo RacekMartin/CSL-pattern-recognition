@@ -14,7 +14,7 @@ import joblib
 from features import frame_features
 
 # Directory paths
-ROOT = Path(__file__).resolve().parent.parent
+ROOT = Path(__file__).resolve().parent.parent.parent
 DATA_DIR = ROOT / "data"
 LANDMARKS_DIR = DATA_DIR / "landmarks"
 SEGMENTS_CSV = DATA_DIR / "segments.csv"

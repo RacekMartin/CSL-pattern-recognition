@@ -105,3 +105,14 @@ segment the video to individual character signings.
 
 *** Command that prints fomrat of .npz files content
 python -c "import numpy as np; d = np.load('data/landmarks/R01_kolo1_stred.npz'); [print(k, d[k].shape) for k in d.files]"
+
+*** How to run skripts
+```angular2html
+python scripts\landmarks_extraction.py --participant R01 --camera stred
+python scripts\landmarks_extraction.py
+
+python scripts\record.py --participant R01 --session 1
+
+python scripts\demonstration\train_mlp.py
+ython scripts\demonstration\live_demo.py
+```
