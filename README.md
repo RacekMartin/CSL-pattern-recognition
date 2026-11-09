@@ -72,6 +72,10 @@ https://divadlobarka.cz
 Ticha linka:
 https://www.tichalinka.cz/kontakt
 
+scikit learn:
+https://scikit-learn.org/stable/getting_started.html
+https://scikit-learn.org/stable/glossary.html#term-fit
+
 The data will be stored as .npz format instead of plain .txt. or common .npy. 
 .npz is a ZIP archive which contains multiple NumPt arrays with different names.
 These will contain data like: timestamp_ms, landmarks coords, handedness_score,
