@@ -9,8 +9,7 @@ LEFT_SLOT = 0
 RIGHT_SLOT = 1
 HAND_WRIST = 0
 
-# Creates input vector from hand(2, 21, 3) and pose(12, 3)
-# Converts the normalized MP coordinates into pixels
+# Creates input vector from hand(2, 21, 3) and pose(12, 3) arrays
 def frame_features(hands, pose, width, height):
     # Check if at least one hand is present in the frame
     left_hand_detected = not np.isnan(hands[LEFT_SLOT][HAND_WRIST][0])

@@ -75,6 +75,7 @@ https://www.tichalinka.cz/kontakt
 scikit learn:
 https://scikit-learn.org/stable/getting_started.html
 https://scikit-learn.org/stable/glossary.html#term-fit
+https://scikit-learn.org/stable/auto_examples/model_selection/plot_confusion_matrix.html
 
 The data will be stored as .npz format instead of plain .txt. or common .npy. 
 .npz is a ZIP archive which contains multiple NumPt arrays with different names.
@@ -93,7 +94,6 @@ segment the video to individual character signings.
 
 *** Poznamky z korespendencie s ludmi:
 
-
 *** Porovnania, ktore zahrnut do prace:
 - normalizacia podla vzdialenosti oci vs ramien
 - model natrenovany s landmarkmi tvare vs bez
@@ -101,4 +101,7 @@ segment the video to individual character signings.
 - Transformer vs LSTM
 - predtrenovanie na amateroch + finetuning na profikoch vs bez predtrenovania
 - predtrenovanie na ASL vs finetuning na profikoch vs bez predtrenovania
-- zistenie ci auumentovane data priniesli presnost alebo ju praveze znizili
+- zistenie ci augumentovane data priniesli presnost alebo ju praveze znizili
+
+*** Command that prints fomrat of .npz files content
+python -c "import numpy as np; d = np.load('data/landmarks/R01_kolo1_stred.npz'); [print(k, d[k].shape) for k in d.files]"
