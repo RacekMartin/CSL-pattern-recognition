@@ -98,10 +98,17 @@ segment the video to individual character signings.
 - normalizacia podla vzdialenosti oci vs ramien
 - model natrenovany s landmarkmi tvare vs bez
 - dosiahnuta presnost obojrucnej abecedy vs jednorucnej u Snajdera
-- Transformer vs LSTM
-- predtrenovanie na amateroch + finetuning na profikoch vs bez predtrenovania
-- predtrenovanie na ASL vs finetuning na profikoch vs bez predtrenovania
+- Transformer vs LSTM -> transformer pada, mam malo dat
+- predtrenovanie na amateroch + finetuning na profikoch vs bez predtrenovania -> pada, mam malo dat
+- predtrenovanie na ASL vs finetuning na profikoch vs bez predtrenovania -> Kaggle ASL dataset, profikov nemam iba mix amaterof a mierne pokrocilych
 - zistenie ci augumentovane data priniesli presnost alebo ju praveze znizili
+
+It might be a good idea to mention bachelor thesis documentation Google's SignGemma model
+```angular2html
+Čo to je: model, nie dataset. Google ho predstavil 28. mája 2025 ako súčasť rodiny modelov Gemma a model prekladá znakový 
+jazyk do hovoreného textu. Hoci bol trénovaný na viacerých jazykoch, testovaný a optimalizovaný bol hlavne na americkú 
+znakovú reč (ASL) a angličtinu. Podľa článkov používa vision transformer, ktorý sleduje pohyby a tvary rúk aj výraz tváre.
+```
 
 *** Command that prints fomrat of .npz files content
 python -c "import numpy as np; d = np.load('data/landmarks/R01_kolo1_stred.npz'); [print(k, d[k].shape) for k in d.files]"

@@ -88,7 +88,7 @@ def main():
     class_names = model.classes_
 
     # Initialize detectors - face landmarks are not used yet
-    hand_detector, pose_detector, face_detector = create_detectors()
+    hand_detector, face_detector, pose_detector  = create_detectors()
     face_detector.close()
 
     web_cam = cv2.VideoCapture(CAMERA_INDEX)
