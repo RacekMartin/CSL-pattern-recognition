@@ -72,6 +72,11 @@ https://divadlobarka.cz
 Ticha linka:
 https://www.tichalinka.cz/kontakt
 
+scikit learn:
+https://scikit-learn.org/stable/getting_started.html
+https://scikit-learn.org/stable/glossary.html#term-fit
+https://scikit-learn.org/stable/auto_examples/model_selection/plot_confusion_matrix.html
+
 The data will be stored as .npz format instead of plain .txt. or common .npy. 
 .npz is a ZIP archive which contains multiple NumPt arrays with different names.
 These will contain data like: timestamp_ms, landmarks coords, handedness_score,
@@ -89,12 +94,32 @@ segment the video to individual character signings.
 
 *** Poznamky z korespendencie s ludmi:
 
-
 *** Porovnania, ktore zahrnut do prace:
 - normalizacia podla vzdialenosti oci vs ramien
 - model natrenovany s landmarkmi tvare vs bez
 - dosiahnuta presnost obojrucnej abecedy vs jednorucnej u Snajdera
-- Transformer vs LSTM
-- predtrenovanie na amateroch + finetuning na profikoch vs bez predtrenovania
-- predtrenovanie na ASL vs finetuning na profikoch vs bez predtrenovania
-- zistenie ci auumentovane data priniesli presnost alebo ju praveze znizili
+- Transformer vs LSTM -> transformer pada, mam malo dat
+- predtrenovanie na amateroch + finetuning na profikoch vs bez predtrenovania -> pada, mam malo dat
+- predtrenovanie na ASL vs finetuning na profikoch vs bez predtrenovania -> Kaggle ASL dataset, profikov nemam iba mix amaterof a mierne pokrocilych
+- zistenie ci augumentovane data priniesli presnost alebo ju praveze znizili
+
+It might be a good idea to mention bachelor thesis documentation Google's SignGemma model
+```angular2html
+Čo to je: model, nie dataset. Google ho predstavil 28. mája 2025 ako súčasť rodiny modelov Gemma a model prekladá znakový 
+jazyk do hovoreného textu. Hoci bol trénovaný na viacerých jazykoch, testovaný a optimalizovaný bol hlavne na americkú 
+znakovú reč (ASL) a angličtinu. Podľa článkov používa vision transformer, ktorý sleduje pohyby a tvary rúk aj výraz tváre.
+```
+
+*** Command that prints fomrat of .npz files content
+python -c "import numpy as np; d = np.load('data/landmarks/R01_kolo1_stred.npz'); [print(k, d[k].shape) for k in d.files]"
+
+*** How to run skripts
+```angular2html
+python scripts\landmarks_extraction.py --participant R01 --camera stred
+python scripts\landmarks_extraction.py
+
+python scripts\record.py --participant R01 --session 1
+
+python scripts\demonstration\train_mlp.py
+ython scripts\demonstration\live_demo.py
+```

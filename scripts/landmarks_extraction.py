@@ -452,11 +452,11 @@ def update_csv(csv_path, header, recording, new_rows):
     temporary_path.replace(csv_path)
 
 # Finds all recorded rounds in raw_videos folder by corresponding events.csv file name
-def find_rounds(participant_filter):
+def find_rounds(videos_dir, participant_filter):
     prefixes = []
 
     # Iterate through all file names, that ends with "_events.csv"
-    for events_path in sorted(RAW_VIDEOS_DIR.glob("*_events.csv")):
+    for events_path in sorted(videos_dir.glob("*_events.csv")):
         prefix = events_path.name.removesuffix("_events.csv") # "R04_kolo3_events.csv" to """R04_kolo3"
         participant = prefix.split("_")[0] # "R04_kolo3_events.csv" to "R04"
         if (participant_filter is None) or (participant == participant_filter):
@@ -469,16 +469,26 @@ def main():
     parser.add_argument("--participant", help="only this participant, e.g. R04 (default: all)")
     parser.add_argument("--camera", choices=CAMERA_NAMES, help="only this camera (default: all)")
     parser.add_argument("--overwrite", action="store_true", help="extract again even if the .npz already exists")
+    parser.add_argument("--videos-dir", type=Path, default=RAW_VIDEOS_DIR,
+                        help="where the recorded videos are, e.g. external disk")
+    parser.add_argument("--output-dir", type=Path, default=DATA_DIR,
+                        help="where landmarks/ and the csv tables go, e.g. external disk")
+
     args = parser.parse_args()
 
-    LANDMARKS_DIR.mkdir(parents=True, exist_ok=True)
+    videos_dir = args.videos_dir
+    output_dir = args.output_dir
+    landmarks_dir = output_dir / "landmarks"
+    recordings_csv = output_dir / "recordings.csv"
+    segments_csv = output_dir / "segments.csv"
+    landmarks_dir.mkdir(parents=True, exist_ok=True)
 
     if args.camera is None:
         cameras = CAMERA_NAMES
     else:
         cameras = [args.camera]
 
-    prefixes = find_rounds(args.participant)
+    prefixes = find_rounds(videos_dir, args.participant)
     if not prefixes:
         print("ERR: no recordings found")
         return
@@ -489,16 +499,20 @@ def main():
 
     # Iterate through each recording round
     for prefix in prefixes:
-        frame_times = load_frame_times(RAW_VIDEOS_DIR / f"{prefix}_frames.csv")
-        events = load_events(RAW_VIDEOS_DIR / f"{prefix}_events.csv")
+        frame_times = load_frame_times(videos_dir / f"{prefix}_frames.csv")
+        events = load_events(videos_dir / f"{prefix}_events.csv")
         participant = prefix.split("_")[0]
+
+        # differentiate between "kolo" and "round"
+        round_name = prefix.split("_")[1]
+        recording_type = round_name.rstrip("0123456789")
 
         # Iterate through each camera
         for camera in cameras:
             current_number += 1
             recording = f"{prefix}_{camera}"
-            video_path = RAW_VIDEOS_DIR / f"{recording}.avi"
-            npz_path = LANDMARKS_DIR / f"{recording}.npz"
+            video_path = videos_dir / f"{recording}.avi"
+            npz_path = landmarks_dir / f"{recording}.npz"
             timestamps_ms = frame_times[camera]
 
             if not video_path.exists():
@@ -522,14 +536,14 @@ def main():
                 fps = arrays["fps"]
 
             # Update recordings and segments csv files
-            recording_row = [recording, participant, video_path.name, "kolo", camera,
+            recording_row = [recording, participant, video_path.name, recording_type, camera,
                              width, height, f"{fps:.2f}", 0, POSE_MODEL_NAME, mp.__version__, ""]
-            update_csv(RECORDINGS_CSV, RECORDINGS_HEADER, recording, [recording_row])
+            update_csv(recordings_csv, RECORDINGS_HEADER, recording, [recording_row])
 
             segment_rows = []
             for start, end, label in events_to_segments(events, timestamps_ms):
                 segment_rows.append([recording, start, end, label, "prompt"])
-            update_csv(SEGMENTS_CSV, SEGMENTS_HEADER, recording, segment_rows)
+            update_csv(segments_csv, SEGMENTS_HEADER, recording, segment_rows)
 
     run_min = (time.perf_counter() - run_start_time) / 60
     print(f"Done in {run_min:.1f} min")

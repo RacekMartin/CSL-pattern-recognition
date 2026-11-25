@@ -1,3 +1,12 @@
+import ctypes
+# Windows display scaling (e.g. 150 %) enlarges and blurs the OpenCV window.
+# Declaring the program "DPI aware" makes Windows show the image pixel by pixel.
+user32 = ctypes.windll.user32
+user32.SetProcessDPIAware()
+# Real screen size in pixels - correct only after SetProcessDPIAware
+SCREEN_W = user32.GetSystemMetrics(0)
+SCREEN_H = user32.GetSystemMetrics(1)
+
 import argparse
 import csv
 import threading
@@ -21,22 +30,54 @@ DISPLAY_ORDER = ["lava", "stred", "prava"]
 # Input resolution and frame rate
 WIDTH, HEIGHT, FPS = 1920, 1080, 30
 # Resolution of one camera view in the display window
-VIEW_W, VIEW_H = 640, 360
+VIEW_W = SCREEN_W // CAMERA_COUNT
+VIEW_H = VIEW_W * 9 // 16
 
-# Signs recorded in one round
-LETTERS = ["A", "Á", "E", "É", "Ě", "C", "Č", "R", "Ř", "S", "Š"]
-NUMBERS = ["5", "6", "7", "8", "9", "10"]
-SIGNS = LETTERS + NUMBERS
+# Two-handed alphabet
+LETTERS = ["A", "Á", "B", "C", "Č", "D",
+           "Ď", "E", "É", "Ě", "F", "G",
+           "H", "CH", "I", "Í", "J", "K",
+           "L", "M", "N", "Ň", "O", "Ó",
+           "P", "Q", "R", "Ř", "S", "Š",
+           "T", "Ť", "U", "Ú", "Ů", "V",
+           "W", "X", "Y", "Ý", "Z", "Ž"]
+# Letters that men and women show differently
+VARIANT_LETTERS = ["B", "C", "Č", "E", "É", "Ě", "O", "Ó", "Q"]
+# Numbers 0-20
+NUMBERS = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10",
+           "11", "12", "13", "14", "15", "16", "17", "18", "19", "20"]
+# Words spelled letter by letter - once slowly and the other time fluently
+WORDS = ["PLZEŇ", "ŠTĚPÁN", "OLDŘICH", "RŮŽIČKA", "MAXWELL"]
+
+# Signs performed in one recording
+ROUND_SIGNS = []
+for letter in LETTERS:
+    if letter in VARIANT_LETTERS:
+        ROUND_SIGNS.append(letter + "_M")
+        ROUND_SIGNS.append(letter + "_Z")
+    else:
+        ROUND_SIGNS.append(letter)
+for number in NUMBERS:
+    ROUND_SIGNS.append(number)
+
+# Words spelled during one recording
+WORD_SIGNS = []
+for word in WORDS:
+    WORD_SIGNS.append(word + "_pomaly")
+    WORD_SIGNS.append(word + "_plynulo")
 
 # Phase durations in seconds
 COUNTDOWN_STEP_S = 0.5
-SHOW_S = 1.5
-REST_S = 1.5
+SHOW_S = 2
+REST_S = 1
+# Time for one letter when spelling a word
+SLOW_LETTER_S = 2.5
+FLUENT_LETTER_S = 1.0
 
 # Instruction panel under the camera views
-INSTRUCTION_H = 300
-INSTRUCTION_W = 1920
-INSTRUCTION_FONT = ImageFont.truetype("C:/Windows/Fonts/arial.ttf", 150)
+INSTRUCTION_W = VIEW_W * CAMERA_COUNT
+INSTRUCTION_H = SCREEN_H - VIEW_H
+INSTRUCTION_FONT = ImageFont.truetype("C:/Windows/Fonts/arial.ttf", 100)
 # Text color (RGB) for each kind of phase
 INSTRUCTION_COLORS = {
     "wait": (255, 255, 255),
@@ -102,11 +143,29 @@ def camera_record(camera_name, camera, video_path, start_time, stop_event, lates
     if video_writer is not None:
         video_writer.release()
 
-# Instrcutions for each sign
+# Instructions for each sign
 def sign_text(sign):
     if sign in NUMBERS:
         return f"číslo {sign}"
+    if sign.endswith("_M"):
+        return sign.removesuffix("_M") + " (mužská)"
+    if sign.endswith("_Z"):
+        return sign.removesuffix("_Z") + " (ženská)"
+    if sign.endswith("_pomaly"):
+        return sign.removesuffix("_pomaly") + " pomaly"
+    if sign.endswith("_plynulo"):
+        return sign.removesuffix("_plynulo") + " plynulo"
     return sign
+
+# How long the "show" phase lasts - words get time according to their length
+def show_duration(sign):
+    if sign.endswith("_pomaly"):
+        word = sign.removesuffix("_pomaly")
+        return len(word) * SLOW_LETTER_S
+    if sign.endswith("_plynulo"):
+        word = sign.removesuffix("_plynulo")
+        return len(word) * FLUENT_LETTER_S + 1.0
+    return SHOW_S
 
 # Countdown 3-2-1, show, rest
 def build_phases(sign):
@@ -114,7 +173,7 @@ def build_phases(sign):
 
     for number in ["3", "2", "1"]:
         phases.append({"text": number, "duration_s": COUNTDOWN_STEP_S, "kind": "countdown"})
-    phases.append({"text": f"UKÁŽ: {sign_text(sign)}", "duration_s": SHOW_S, "kind": "show"})
+    phases.append({"text": f"UKÁŽ: {sign_text(sign)}", "duration_s": show_duration(sign), "kind": "show"})
     phases.append({"text": "Ruky do lona", "duration_s": REST_S, "kind": "rest"})
 
     return phases
@@ -145,18 +204,22 @@ def build_camera_row(latest_frames):
             view = cv2.resize(frame, (VIEW_W, VIEW_H))
             view = cv2.flip(view, 1)
 
-        cv2.putText(view, name, (10, VIEW_H - 15), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 0, 255), 2)
+        cv2.putText(view, name, (10, VIEW_H - 15), cv2.FONT_HERSHEY_SIMPLEX, 1.1, (0, 0, 255), 2)
         views.append(view)
 
     return np.hstack(views)
 
 # Shows the preview, guides the participant and adds one event per completed sign
-def run_session(latest_frames, start_time, events):
+def run_session(latest_frames, start_time, events, signs):
     sign_index = 0
     phases = []
     phase_index = 0
     phase_start = 0.0
     pending_event = None
+
+    # Fullscreen window
+    cv2.namedWindow("Recording", cv2.WINDOW_NORMAL)
+    cv2.setWindowProperty("Recording", cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
 
     while True:
         now = time.perf_counter()
@@ -165,7 +228,7 @@ def run_session(latest_frames, start_time, events):
         if phases and now - phase_start >= phases[phase_index]["duration_s"]:
             if phases[phase_index]["kind"] == "show":
                 pending_event = {
-                    "label": SIGNS[sign_index],
+                    "label": signs[sign_index],
                     "start_ms": (phase_start - start_time) * 1000,
                     "end_ms": (now - start_time) * 1000,
                 }
@@ -183,8 +246,8 @@ def run_session(latest_frames, start_time, events):
         if phases:
             text = phases[phase_index]["text"]
             kind = phases[phase_index]["kind"]
-        elif sign_index < len(SIGNS):
-            text = f"Ďalej: {sign_text(SIGNS[sign_index])}"
+        elif sign_index < len(signs):
+            text = f"Ďalej: {sign_text(signs[sign_index])}"
             kind = "wait"
         else:
             text = "Hotovo!"
@@ -193,10 +256,10 @@ def run_session(latest_frames, start_time, events):
         # Arrange window content: cameras on top, instructions below
         camera_row = build_camera_row(latest_frames)
         elapsed_s = now - start_time
-        shown_number = min(sign_index + 1, len(SIGNS))
-        status = (f"REC {elapsed_s:5.1f} s   znak {shown_number}/{len(SIGNS)}"
+        shown_number = min(sign_index + 1, len(signs))
+        status = (f"REC {elapsed_s:5.1f} s   znak {shown_number}/{len(signs)}"
                   f"   SPACE = start   R = znova   Q = koniec")
-        cv2.putText(camera_row, status, (10, 35), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 0, 255), 2)
+        cv2.putText(camera_row, status, (10, 35), cv2.FONT_HERSHEY_SIMPLEX, 1.3, (0, 0, 255), 3)
         instruction_panel = make_instruction_panel(text, kind)
         cv2.imshow("Recording", np.vstack([camera_row, instruction_panel]))
 
@@ -204,8 +267,8 @@ def run_session(latest_frames, start_time, events):
         key = cv2.waitKey(15) & 0xFF
         if key == ord("q"):
             break
-        elif key == ord(" ") and not phases and sign_index < len(SIGNS):
-            phases = build_phases(SIGNS[sign_index])
+        elif key == ord(" ") and not phases and sign_index < len(signs):
+            phases = build_phases(signs[sign_index])
             phase_index = 0
             phase_start = time.perf_counter()
             pending_event = None
@@ -276,6 +339,11 @@ def print_stats(frame_times, video_paths):
                 dropped_frames += 1
 
         longest_gap_ms = max(gaps_ms)
+
+        # A gap over 0.5 s means the program or disk froze - the round should be repeated
+        if longest_gap_ms > 500:
+            print(f"WARNING: {name}: {longest_gap_ms / 1000:.1f} s bez snímok, kolo zopakuj!")
+
         size_mb = video_paths[name].stat().st_size / 1_000_000
 
         print(f"{name:6} {frame_count:5} snímok  {real_fps:5.1f} fps  "
@@ -290,16 +358,32 @@ def main():
     parser.add_argument("--cams", type=int, nargs=3, default=[1, 0, 2],
                         metavar=("STRED", "LAVA", "PRAVA"),
                         help="camera indices in order: center, left, right")
+    parser.add_argument("--mode", choices=["kolo", "slova"], default="kolo",
+                        help="kolo = abeceda a čísla, slova = hláskovanie slov")
+    parser.add_argument("--videos-dir", type=Path, default=RAW_VIDEOS_DIR,
+                        help="kam ukladať videá, napr. externý disk")
+    parser.add_argument("--allow-missing", action="store_true",
+                        help="test: continue even if some cameras are not connected")
 
     args = parser.parse_args()
 
+    # Choose the list of signs according to the mode
+    if args.mode == "kolo":
+        signs = ROUND_SIGNS
+    else:
+        signs = WORD_SIGNS
+
+    # Create the output folder if it doesn't exist yet
+    videos_dir = args.videos_dir
+    videos_dir.mkdir(parents=True, exist_ok=True)
+
     # Output file names
-    file_prefix = f"{args.participant}_kolo{args.session}"
+    file_prefix = f"{args.participant}_{args.mode}{args.session}"
     video_paths = {}
     for name in CAMERA_NAMES:
-        video_paths[name] = RAW_VIDEOS_DIR / f"{file_prefix}_{name}.avi"
-    times_csv_path = RAW_VIDEOS_DIR / f"{file_prefix}_frames.csv"
-    events_csv_path = RAW_VIDEOS_DIR / f"{file_prefix}_events.csv"
+        video_paths[name] = videos_dir / f"{file_prefix}_{name}.avi"
+    times_csv_path = videos_dir / f"{file_prefix}_frames.csv"
+    events_csv_path = videos_dir / f"{file_prefix}_events.csv"
 
     # Make sure you don't overwrite recording with the same name
     all_output_paths = list(video_paths.values()) + [times_csv_path, events_csv_path]
@@ -315,6 +399,9 @@ def main():
         index = args.cams[i]
         camera = camera_open(index)
         if camera is None:
+            if args.allow_missing:
+                print(f"WARNING: camera {name} (index {index}) not available, continuing without it")
+                continue
             print(f"ERR: unable to open camera {name} (index {index})")
             for opened_camera in cameras.values():
                 opened_camera.release()
@@ -332,30 +419,31 @@ def main():
 
     # Create one recording thread per camera
     threads = []
-    for name in CAMERA_NAMES:
-        thread = threading.Thread(
-            target=camera_record,
-            args=(name, cameras[name], video_paths[name], start_time, stop_event,
-                  latest_frames, frame_times[name]))
-        thread.start()
-        threads.append(thread)
+    try:
+        for name in cameras:
+            thread = threading.Thread(
+                target=camera_record,
+                args=(name, cameras[name], video_paths[name], start_time, stop_event,
+                      latest_frames, frame_times[name]))
+            thread.start()
+            threads.append(thread)
 
-    # Show the preview until q is pressed
-    run_session(latest_frames, start_time, events)
-
-    # Stop threads and release resources
-    stop_event.set()
-    for thread in threads:
-        thread.join()
-    for camera in cameras.values():
-        camera.release()
-    cv2.destroyAllWindows()
+        # Show the preview until q is pressed
+        run_session(latest_frames, start_time, events, signs)
+    finally:
+        # Stop threads and release resources
+        stop_event.set()
+        for thread in threads:
+            thread.join()
+        for camera in cameras.values():
+            camera.release()
+        cv2.destroyAllWindows()
 
     # Save results and print statistics
     save_frame_times(times_csv_path, frame_times)
     save_events(events_csv_path, events)
     print_stats(frame_times, video_paths)
-    print(f"Uložené znaky: {len(events)}/{len(SIGNS)}")
+    print(f"Uložené znaky: {len(events)}/{len(signs)}")
 
 
 
