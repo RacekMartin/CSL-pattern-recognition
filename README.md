@@ -69,6 +69,9 @@ https://www.pomuckyproneslysici.cz/online-kurz-znakoveho-jazyka-1-lekce-prstova-
 Theatre Barka:
 https://divadlobarka.cz
 
+Tichy svet:
+https://www.tichysvet.cz/kontaktni-mista/brno
+
 Ticha linka:
 https://www.tichalinka.cz/kontakt
 
@@ -100,14 +103,16 @@ segment the video to individual character signings.
 - dosiahnuta presnost obojrucnej abecedy vs jednorucnej u Snajdera
 - Transformer vs LSTM -> transformer pada, mam malo dat
 - predtrenovanie na amateroch + finetuning na profikoch vs bez predtrenovania -> pada, mam malo dat
-- predtrenovanie na ASL vs finetuning na profikoch vs bez predtrenovania -> Kaggle ASL dataset, profikov nemam iba mix amaterof a mierne pokrocilych
+- predtrenovanie na ASL vs finetuning na profikoch vs bez predtrenovania -> Kaggle ASL dataset, profikov nemam iba 
+  mix amaterof a mierne pokrocilych
 - zistenie ci augumentovane data priniesli presnost alebo ju praveze znizili
 
 It might be a good idea to mention bachelor thesis documentation Google's SignGemma model
 ```angular2html
-Čo to je: model, nie dataset. Google ho predstavil 28. mája 2025 ako súčasť rodiny modelov Gemma a model prekladá znakový 
-jazyk do hovoreného textu. Hoci bol trénovaný na viacerých jazykoch, testovaný a optimalizovaný bol hlavne na americkú 
-znakovú reč (ASL) a angličtinu. Podľa článkov používa vision transformer, ktorý sleduje pohyby a tvary rúk aj výraz tváre.
+Čo to je: model, nie dataset. Google ho predstavil 28. mája 2025 ako súčasť rodiny modelov Gemma a model prekladá
+znakový jazyk do hovoreného textu. Hoci bol trénovaný na viacerých jazykoch, testovaný a optimalizovaný bol hlavne na
+americkú znakovú reč (ASL) a angličtinu. Podľa článkov používa vision transformer, ktorý sleduje pohyby a tvary rúk
+aj výraz tváre.
 ```
 
 *** Command that prints fomrat of .npz files content
@@ -123,3 +128,9 @@ python scripts\record.py --participant R01 --session 1
 python scripts\demonstration\train_mlp.py
 ython scripts\demonstration\live_demo.py
 ```
+
+
+Dolezite zistenie:
+Deti sa ucia znakovat z pohladu dominantnej ruky. Nie je preto finalny faktor to, aby clovek, s ktorym komunikujes videl
+znak tak ako by ho napisal na papier. Preto mozu pravaci alebo lavaci niektore znaky pre daneho cloveka zobrazit zrkadlovo.
+

@@ -42,7 +42,7 @@ LETTERS = ["A", "Á", "B", "C", "Č", "D",
            "T", "Ť", "U", "Ú", "Ů", "V",
            "W", "X", "Y", "Ý", "Z", "Ž"]
 # Letters that men and women show differently
-VARIANT_LETTERS = ["B", "C", "Č", "E", "É", "Ě", "O", "Ó", "Q"]
+VARIANT_LETTERS = ["B", "C", "Č", "E", "É", "Ě", "O", "Ó"]
 # Numbers 0-20
 NUMBERS = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10",
            "11", "12", "13", "14", "15", "16", "17", "18", "19", "20"]
@@ -67,9 +67,9 @@ for word in WORDS:
     WORD_SIGNS.append(word + "_plynulo")
 
 # Phase durations in seconds
-COUNTDOWN_STEP_S = 0.5
-SHOW_S = 2
-REST_S = 1
+COUNTDOWN_STEP_S = 0.3
+SHOW_S = 1.8
+REST_S = 0.9
 # Time for one letter when spelling a word
 SLOW_LETTER_S = 2.5
 FLUENT_LETTER_S = 1.0
@@ -339,10 +339,13 @@ def print_stats(frame_times, video_paths):
                 dropped_frames += 1
 
         longest_gap_ms = max(gaps_ms)
+        longest_gap_index = gaps_ms.index(longest_gap_ms)
+        gap_time_s = times_ms[longest_gap_index] / 1000
 
-        # A gap over 0.5 s means the program or disk froze - the round should be repeated
+        # A gap over 0.5 s means the program or disk froze
         if longest_gap_ms > 500:
-            print(f"WARNING: {name}: {longest_gap_ms / 1000:.1f} s bez snímok, kolo zopakuj!")
+            print(f"WARNING: {name}: {longest_gap_ms / 1000:.1f} s bez snímok "
+                  f"v čase {gap_time_s:.1f} s, pozri events.csv")
 
         size_mb = video_paths[name].stat().st_size / 1_000_000
 
@@ -357,21 +360,43 @@ def main():
     parser.add_argument("--session", type=int, required=True, help="round number, e.g. 1")
     parser.add_argument("--cams", type=int, nargs=3, default=[1, 0, 2],
                         metavar=("STRED", "LAVA", "PRAVA"),
-                        help="camera indices in order: center, left, right")
+                        help="indexy kamery v piradi: center, left, right")
     parser.add_argument("--mode", choices=["kolo", "slova"], default="kolo",
-                        help="kolo = abeceda a čísla, slova = hláskovanie slov")
+                        help="kolo = abeceda a cisla, slova = hlaskovanie slov")
     parser.add_argument("--videos-dir", type=Path, default=RAW_VIDEOS_DIR,
-                        help="kam ukladať videá, napr. externý disk")
+                        help="kam ukladat videa, napr. externy disk")
     parser.add_argument("--allow-missing", action="store_true",
                         help="test: continue even if some cameras are not connected")
+    parser.add_argument("--mode", choices=["kolo", "slova", "dodatok"], default="kolo",
+                        help="kolo = abeceda a cisla, slova = hlaskovanie slov, dodatok = len vybrane znaky")
+    parser.add_argument("--signs", nargs="+",
+                        help="len pre --mode dodatok: znaky na dotocenie, napr. Q S Š")
+    parser.add_argument("--repeat", type=int, default=1,
+                        help="len pre --mode dodatok: kolkokrat sa zoznam znakov zopakuje")
 
     args = parser.parse_args()
 
     # Choose the list of signs according to the mode
     if args.mode == "kolo":
         signs = ROUND_SIGNS
-    else:
+    elif args.mode == "slova":
         signs = WORD_SIGNS
+    else:
+        # Only the chosen signs that has to be repeated "--repeat ... " times
+        if args.signs is None:
+            print("ERR: --mode 'dodatok' needs --specification of signs to be repeated")
+            return
+
+        # Check if every sign specified is part of the "kolo"
+        for sign in args.signs:
+            if sign not in ROUND_SIGNS:
+                print(f"ERR: unknown sign {sign}, use labels like A, B_M, B_Z, 7")
+                return
+
+        signs = []
+        for repetition in range(args.repeat):
+            for sign in args.signs:
+                signs.append(sign)
 
     # Create the output folder if it doesn't exist yet
     videos_dir = args.videos_dir
